@@ -1,0 +1,74 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ozon_api"
+dynamic = ["version"]
+description = "A Python API client for Ozon (Russian Amazon) catalog"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [
+    { name = "Miskler" }
+]
+keywords = ["api", "ozon", "store", "catalog"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Internet",
+    "Topic :: Utilities",
+]
+dependencies = [
+    "camoufox[geoip]",
+    "human_requests",
+    "aiohttp",
+    "aiohttp-retry"
+]
+
+[project.optional-dependencies]
+tests = [
+    "pytest",
+    "pytest-anyio",
+    "pytest-jsonschema-snapshot",
+    "jsoncrack-for-sphinx",
+]
+dev = [
+    "pytest",
+    "pytest-anyio",
+    "pytest-jsonschema-snapshot",
+    "jsoncrack-for-sphinx",
+    "pillow",
+    "black",
+    "flake8",
+    "mypy",
+    "isort",
+]
+
+[project.urls]
+Homepage = "https://github.com/Open-Inflation/ozon_api"
+Repository = "https://github.com/Open-Inflation/ozon_api"
+Documentation = "https://open-inflation.github.io/ozon_api/quick_start"
+
+[tool.setuptools.dynamic]
+version = { attr = "ozon_api.__version__" }
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+python_files = ["*_test.py", "*_tests.py"]
+filterwarnings = [
+    "ignore::pytest.PytestUnraisableExceptionWarning",
+    "ignore:Event loop is closed:RuntimeWarning",
+]
+anyio_mode = "auto"
+autotest_start_class = "ozon_api.OzonAPI"
+addopts = "-v --tb=short --disable-warnings"

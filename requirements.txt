@@ -1,0 +1,15 @@
+camoufox
+human_requests
+aiohttp
+aiohttp-retry
+pydantic
+
+pytest
+pytest-anyio
+pytest-jsonschema-snapshot
+pillow
+
+black
+flake8
+mypy
+isort
