@@ -16,6 +16,9 @@ class ProductService(ApiChild["OzonAPI"]):
     async def info():
         pass # TODO
 
+    async def other_offers_from_sellers():
+        pass # TODO
+
 
 @dataclass(init=False)
 class ClassCatalog(ApiChild["OzonAPI"], ApiParent):
@@ -34,7 +37,11 @@ class ClassCatalog(ApiChild["OzonAPI"], ApiParent):
     async def tree(self):
         pass # TODO
 
+    async def subtree(self):
+        pass # TODO
+
     async def feed(self, page_url: str | None = None) -> FetchResponse:
+        # TODO сделать выбор категорий *как-то*
         url = self.parent.API_URL
 
         return await self._parent._request(
