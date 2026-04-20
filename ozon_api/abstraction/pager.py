@@ -4,6 +4,7 @@ import html
 import json
 import re
 from typing import Any, TypeVar
+from urllib.parse import urljoin
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -63,6 +64,37 @@ def _parse_reviews(texts: list[str]) -> int | None:
     return None
 
 
+def _parse_price_text(value: Any) -> tuple[int | float | None, str | None] | None:
+    if not isinstance(value, str):
+        return None
+
+    cleaned = _clean_text(value)
+    if not isinstance(cleaned, str) or not cleaned:
+        return None
+
+    normalized = re.sub(r"\s+", "", cleaned)
+    match = re.search(r"(\d+(?:[.,]\d+)?)([^\d.,]+)?", normalized)
+    if not match:
+        return None
+
+    raw_value = match.group(1).replace(",", ".")
+    if "." in raw_value:
+        try:
+            parsed_value: int | float = float(raw_value)
+        except ValueError:
+            return None
+        if parsed_value.is_integer():
+            parsed_value = int(parsed_value)
+    else:
+        try:
+            parsed_value = int(raw_value)
+        except ValueError:
+            return None
+
+    currency = match.group(2) or None
+    return parsed_value, currency
+
+
 class OzonBaseModel(BaseModel):
     """Базовая модель Ozon, игнорирующая лишние поля."""
 
@@ -110,6 +142,21 @@ class PriceLine(OzonBaseModel):
     @classmethod
     def clean_text(cls, value: Any) -> Any:
         return _clean_text(value)
+
+
+class PriceValue(OzonBaseModel):
+    """Нормализованная цена товара."""
+
+    value: int | float | None = None
+    currency: str | None = None
+
+    @classmethod
+    def from_text(cls, value: Any) -> "PriceValue" | None:
+        parsed = _parse_price_text(value)
+        if not parsed:
+            return None
+        amount, currency = parsed
+        return cls(value=amount, currency=currency)
 
 
 class PriceV2Data(OzonBaseModel):
@@ -300,13 +347,20 @@ class ParsedProduct(OzonBaseModel):
     title: str | None = None
     url: str | None = None
     image_url: str | None = None
-    price: str | None = None
-    original_price: str | None = None
+    price: PriceValue | None = None
+    original_price: PriceValue | None = None
     discount: str | None = None
     rating: float | None = None
     reviews: int | None = None
     badges: list[str] = Field(default_factory=list)
     labels: list[str] = Field(default_factory=list)
+
+    @field_validator("price", "original_price", mode="before")
+    @classmethod
+    def parse_price(cls, value: Any) -> Any:
+        if isinstance(value, PriceValue) or isinstance(value, dict) or value is None:
+            return value
+        return PriceValue.from_text(value)
 
     @classmethod
     def from_blocks(
@@ -342,8 +396,8 @@ class ParsedProduct(OzonBaseModel):
             title=_extract_title(blocks),
             url=url,
             image_url=image_url,
-            price=price.current_price if price else None,
-            original_price=price.original_price if price else None,
+            price=PriceValue.from_text(price.current_price) if price else None,
+            original_price=PriceValue.from_text(price.original_price) if price else None,
             discount=price.discount if price else None,
             rating=rating,
             reviews=reviews,
@@ -438,6 +492,7 @@ class OzonPage(OzonBaseModel):
 
     layout: list[LayoutWidget] = Field(default_factory=list)
     widget_states: dict[str, Any] = Field(default_factory=dict, alias="widgetStates")
+    next_page: str | None = Field(default=None, alias="nextPage")
 
     @field_validator("widget_states", mode="before")
     @classmethod
