@@ -8,6 +8,8 @@ from urllib.parse import urljoin
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from .product_card import render_product_card
+
 T = TypeVar("T", bound=BaseModel)
 
 
@@ -361,6 +363,9 @@ class ParsedProduct(OzonBaseModel):
         if isinstance(value, PriceValue) or isinstance(value, dict) or value is None:
             return value
         return PriceValue.from_text(value)
+
+    def render(self, *, index: int | None = None, card_width: int | None = None) -> str:
+        return render_product_card(self, index=index, card_width=card_width)
 
     @classmethod
     def from_blocks(
